@@ -2,25 +2,43 @@ package de.evil2000.flashaircommander;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
-
-import org.jsoup.nodes.Document;
+import java.util.Random;
 
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
+import android.widget.LinearLayout.LayoutParams;
+import android.widget.ListView;
+import android.widget.ProgressBar;
 
 @SuppressWarnings("deprecation")
 public class FlashAirCommander extends ActionBarActivity {
 	private static final String APP_NAME = "FlashAirCommander";
 	private static final String flashAirHost = "192.168.8.14";
+	private FileListAdapter fileListAdapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_flash_air_commander);
+		
+		ProgressBar progressBar = new ProgressBar(this);
+        progressBar.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+        progressBar.setIndeterminate(true);
+		
+        ListView lstView = (ListView) findViewById(R.id.lstView);
+        
+		lstView.setEmptyView(progressBar);
+		ViewGroup root = (ViewGroup) findViewById(android.R.id.content);
+        root.addView(progressBar);
+        
+        ArrayList<HashMap<String, String>> files = new ArrayList<HashMap<String,String>>();
+        
+        fileListAdapter = new FileListAdapter(this, files);
+        lstView.setAdapter(fileListAdapter);
 	}
 
 	@Override
@@ -53,16 +71,23 @@ public class FlashAirCommander extends ActionBarActivity {
 		OnTask callback = new OnTask() {
 			@Override
 			public void onTaskCompleted(String doc) {
-				ArrayList<HashMap<String, String>> files = parseFileListing(doc);		
+				fileListAdapter.clear();
+				ArrayList<HashMap<String, String>> files = parseFileListing(doc);
+				fileListAdapter.addAll(files);
 			}
 		};
 		
 		if (dir == null) dir = "/";
 		if (dir.equals("")) dir = "/";
 
-		HttpData httpData = new HttpData();
+		/*HttpData httpData = new HttpData();
 		NetworkTask nt = new NetworkTask(httpData, callback);
-		nt.execute("http://" + flashAirHost + "/command.cgi?op=100&DIR="+dir);
+		nt.execute("http://" + flashAirHost + "/command.cgi?op=100&DIR="+dir);*/
+		
+		ArrayList<HashMap<String, String>> files = parseFileListing(generateFakeFileListing(dir));
+		fileListAdapter.clear();
+		fileListAdapter.addAll(files);
+		fileListAdapter.notifyDataSetChanged();
 	}
 	
 	private ArrayList<HashMap<String,String>> parseFileListing(String raw) {
@@ -105,4 +130,15 @@ public class FlashAirCommander extends ActionBarActivity {
 		return filelist;
 	}
 	
+	
+	private String generateFakeFileListing(String dir) {
+		Random r = new Random();
+		int numEntries = r.nextInt(20);
+		
+		String roh = "WLANSD_FILELIST\r\n";
+		for (int i = 0; i < numEntries; i++) {
+			roh += dir+",filename,"+String.valueOf(r.nextInt(Integer.MAX_VALUE))+","+String.valueOf(r.nextInt(32))+","+String.valueOf(r.nextInt(Integer.MAX_VALUE))+","+String.valueOf(r.nextInt(Integer.MAX_VALUE))+"\r\n";			
+		}
+		return roh;
+	}
 }
