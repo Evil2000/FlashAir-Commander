@@ -1,14 +1,14 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
-    <CheckBoxPreference
+    <!-- CheckBoxPreference
         android:defaultValue="true"
         android:key="example_checkbox"
         android:summary="@string/pref_example_summary"
-        android:title="@string/pref_example_title" />
+        android:title="@string/pref_example_title" / -->
 
     <!-- NOTE: EditTextPreference accepts EditText attributes. -->
     <!-- NOTE: EditTextPreference's summary should be set to its value by the activity code. -->
-    <EditTextPreference
+    <!-- EditTextPreference
         android:capitalize="words"
         android:defaultValue="@string/pref_example_default_value"
         android:inputType="textCapWords"
@@ -16,20 +16,50 @@
         android:maxLines="1"
         android:selectAllOnFocus="true"
         android:singleLine="true"
-        android:title="@string/pref_example_title" />
+        android:title="@string/pref_example_title" / -->
 
     <!--
          NOTE: Hide buttons to simplify the UI. Users can touch outside the dialog to
          dismiss it.
     -->
     <!-- NOTE: ListPreference's summary should be set to its value by the activity code. -->
-    <ListPreference
+    <!-- ListPreference
         android:defaultValue="-1"
         android:entries="@array/pref_example_list_titles"
         android:entryValues="@array/pref_example_list_values"
         android:key="example_list"
         android:negativeButtonText="@null"
         android:positiveButtonText="@null"
-        android:title="@string/pref_example_title" />
+        android:title="@string/pref_example_title" / -->
+        
+	<EditTextPreference
+        android:capitalize="none"
+        android:defaultValue="@string/pref_flashair_hostname_default_value"
+        android:inputType="text|textNoSuggestions"
+        android:key="flashAirHostname"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_flashair_hostname"
+        android:persistent="true" />
+	
+	<CheckBoxPreference
+        android:defaultValue="true"
+        android:key="storeImagesInAlbumDir"
+        android:summary="@string/pref_store_imapges_in_album_dir_summary"
+        android:title="@string/pref_store_imapges_in_album_dir_title"
+        android:persistent="true" />
+	
+	<EditTextPreference
+        android:capitalize="none"
+        android:defaultValue="@string/pref_alternative_image_store_directory_default_value"
+        android:inputType="text|textNoSuggestions"
+        android:key="alternativeImageStoreDirectory"
+        android:maxLines="1"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        android:title="@string/pref_alternative_image_store_directory_title"
+        android:dependency="storeImagesInAlbumDir"
+        android:persistent="true" />
 
 </PreferenceScreen>

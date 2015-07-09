@@ -9,24 +9,26 @@ import java.util.HashMap;
 import java.util.Random;
 
 import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AlertDialog.Builder;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.Gravity;
+import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.LinearLayout.LayoutParams;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 
 @SuppressWarnings("deprecation")
 public class FlashAirCommander extends ActionBarActivity {
-	private static final String APP_NAME = "FlashAirCommander";
-	private static final String flashAirHost = "192.168.8.14";
-	private FileListAdapter fileListAdapter;
+	public static final String APP_NAME = "FlashAirCommander";
 	private HashMap<String, String> dirUp = new HashMap<String, String>();
+	private FileListAdapter fileListAdapter;
+	private SharedPreferences sharedPrefs;
+	private ListView lstView;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -40,15 +42,8 @@ public class FlashAirCommander extends ActionBarActivity {
 		dirUp.put("date", "");
 		dirUp.put("time", "");
 		
-		ProgressBar progressBar = new ProgressBar(this);
-		progressBar.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, Gravity.CENTER));
-		progressBar.setIndeterminate(true);
-
-		ListView lstView = (ListView) findViewById(R.id.lstView);
-
-		lstView.setEmptyView(progressBar);
-		ViewGroup root = (ViewGroup) findViewById(android.R.id.content);
-		root.addView(progressBar);
+		lstView = (ListView) findViewById(R.id.lstView);
+		lstView.setEmptyView(findViewById(R.id.prgLoading));
 
 		ArrayList<HashMap<String, String>> files = new ArrayList<HashMap<String, String>>();
 
@@ -56,6 +51,9 @@ public class FlashAirCommander extends ActionBarActivity {
 		fileListAdapter.setNotifyOnChange(true);
 		lstView.setAdapter(fileListAdapter);
 		lstView.setOnItemClickListener(onListItemClick());
+
+		// Get the shared preferences from the Settings class by using PreferenceManager.
+		sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 	}
 
 	@Override
@@ -79,7 +77,7 @@ public class FlashAirCommander extends ActionBarActivity {
 		int id = item.getItemId();
 		if (id == R.id.menu_settings) {
 			Intent intent = new Intent(this, Settings.class);
-		    startActivity(intent);
+			startActivity(intent);
 			return true;
 		} else if (id == R.id.menu_download_selected_files) {
 			return true;
@@ -96,7 +94,7 @@ public class FlashAirCommander extends ActionBarActivity {
 		return new AdapterView.OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> aview, View view, int position, long arg3) {
-				HashMap<String,String> entry = fileListAdapter.getItem(position);
+				HashMap<String, String> entry = fileListAdapter.getItem(position);
 				if (entry.get("attributes").contains("d")) {
 					// User selected a directory
 					if (entry.get("filename").equals("..")) {
@@ -125,6 +123,12 @@ public class FlashAirCommander extends ActionBarActivity {
 		OnTask callback = new OnTask() {
 			@Override
 			public void onTaskCompleted(String doc) {
+				if (doc == null) {
+					findViewById(R.id.prgLoading).setVisibility(View.GONE);
+					lstView.setEmptyView(findViewById(R.id.lblError));
+					showDialog(getString(R.string.dialog_title_error), getString(R.string.dialog_msg_error_connecting_to_flashair));
+					return;
+				}
 				fileListAdapter.clear();
 				if (!(d.equals("") || d.equals("/"))) {
 					dirUp.put("directory", d);
@@ -142,8 +146,10 @@ public class FlashAirCommander extends ActionBarActivity {
 			dir = "/";
 
 		HttpData httpData = new HttpData();
+		httpData.retries = 5;
+		httpData.timeout = 5000;
 		NetworkTask nt = new NetworkTask(httpData, callback);
-		nt.execute("http://" + flashAirHost + "/command.cgi?op=100&DIR=" + dir);
+		nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + "/command.cgi?op=100&DIR=" + dir);
 	}
 
 	/**
@@ -180,7 +186,7 @@ public class FlashAirCommander extends ActionBarActivity {
 			};
 			NetworkTask nt = new NetworkTask(httpData, callback);
 			if (!cachedFile.exists()) {
-				nt.execute("http://" + flashAirHost + "/thumbnail.cgi?" + path);
+				nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + "/thumbnail.cgi?" + path);
 			}
 		}
 	}
@@ -195,7 +201,7 @@ public class FlashAirCommander extends ActionBarActivity {
 		ArrayList<HashMap<String, String>> filelist = new ArrayList<HashMap<String, String>>();
 		if (raw == null)
 			return filelist;
-		
+
 		String[] lines = raw.split("\r\n");
 		for (String line : lines) {
 			if (line.equals("WLANSD_FILELIST"))
@@ -231,6 +237,41 @@ public class FlashAirCommander extends ActionBarActivity {
 		}
 
 		return filelist;
+	}
+
+	public void showDialog(String title, String msg) {
+		showDialog(title, msg, 0, null, null, null);
+	}
+
+	public void showDialog(String title, String msg, int icon) {
+		showDialog(title, msg, icon, null, null, null);
+	}
+
+	public void showDialog(String title, String msg, int icon, DialogInterface.OnClickListener yesHandler, DialogInterface.OnClickListener noHandler,
+			DialogInterface.OnClickListener okHandler) {
+		Builder a = new AlertDialog.Builder(this);
+
+		/*
+		 * new DialogInterface.OnClickListener() {
+		 * public void onClick(DialogInterface dialog, int id) {
+		 * // FIRE ZE MISSILES!
+		 * }
+		 * }
+		 */
+
+		a.setTitle(title);
+		a.setMessage(msg);
+		if (yesHandler != null)
+			a.setPositiveButton(android.R.string.yes, yesHandler);
+		if (noHandler != null)
+			a.setNegativeButton(android.R.string.no, noHandler);
+		if (yesHandler == null && noHandler == null)
+			a.setNeutralButton(android.R.string.ok, okHandler);
+		if (icon > 0)
+			a.setIcon(icon);
+		else
+			a.setIcon(android.R.drawable.ic_dialog_alert);
+		a.show();
 	}
 
 	/**
