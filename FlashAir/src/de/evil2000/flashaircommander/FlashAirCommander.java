@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Random;
 
 import android.support.v7.app.ActionBarActivity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.Menu;
@@ -16,7 +17,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -77,12 +77,21 @@ public class FlashAirCommander extends ActionBarActivity {
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
-		if (id == R.id.action_settings) {
+		if (id == R.id.menu_settings) {
+			Intent intent = new Intent(this, Settings.class);
+		    startActivity(intent);
+			return true;
+		} else if (id == R.id.menu_download_selected_files) {
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
 	}
 
+	/**
+	 * Returns the OnItemClickListener function.
+	 * 
+	 * @return
+	 */
 	private AdapterView.OnItemClickListener onListItemClick() {
 		return new AdapterView.OnItemClickListener() {
 			@Override
@@ -97,6 +106,8 @@ public class FlashAirCommander extends ActionBarActivity {
 						// Dive into selected directory
 						updateFileListing(entry.get("directory") + "/" + entry.get("filename"));
 					}
+				} else {
+					// User selected a file
 				}
 			}
 

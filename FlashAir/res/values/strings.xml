@@ -2,7 +2,24 @@
 <resources>
 
     <string name="app_name">FlashAir Commander</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_download_selected_files">Download selected files</string>
+    <string name="menu_keep_selected_folders_synced">Keep selected folders synchronized</string>
+    
+    <!-- <string name=""></string> -->
+    
+    <string name="pref_example_title">Example</string>
+    <string name="pref_example_summary">Example second line</string>
+    <string name="pref_example_default_value">Example value</string>
+    <string-array name="pref_example_list_titles">
+        <item>Example 1</item>
+        <item>Example 2</item>
+        <item>Example 3</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>Example_1</item>
+        <item>Example_2</item>
+        <item>Example_3</item>
+    </string-array>
 
 </resources>
