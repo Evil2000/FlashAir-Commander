@@ -44,7 +44,7 @@
         android:persistent="true" />
 	
 	<CheckBoxPreference
-        android:defaultValue="true"
+        android:defaultValue="false"
         android:key="storeImagesInAlbumDir"
         android:summary="@string/pref_store_imapges_in_album_dir_summary"
         android:title="@string/pref_store_imapges_in_album_dir_title"

@@ -27,7 +27,7 @@
     <string name="pref_store_imapges_in_album_dir_title">Don\'t store pictures in album</string>
     <string name="pref_store_imapges_in_album_dir_summary">Don\'t save the downloaded pictures in Android album directory (mostly on SD-Card)</string>
     <string name="pref_alternative_image_store_directory_title">Alternative download directory</string>
-    <string name="pref_alternative_image_store_directory_default_value">/mnt/sdcard</string>
+    <string name="pref_alternative_image_store_directory_default_value">/mnt/sdcard/FlashAir</string>
     
     <string name="dialog_title_error">Error</string>
     <string name="dialog_msg_error_connecting_to_flashair">Error connecting to FlashAir device.</string>

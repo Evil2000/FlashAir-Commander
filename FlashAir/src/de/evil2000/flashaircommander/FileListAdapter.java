@@ -12,13 +12,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 public class FileListAdapter extends ArrayAdapter<HashMap<String, String>> {
 	private Context appContext;
+	private EditAdapterCallback callback;
 	private ArrayList<String> ImageExtensions = new ArrayList<String>();
-	private ArrayList<String> MovieExtensions = new ArrayList<String>();;
+	private ArrayList<String> MovieExtensions = new ArrayList<String>();
 
 	public FileListAdapter(Context context, ArrayList<HashMap<String, String>> objects) {
 		super(context, 0, objects);
@@ -52,27 +56,37 @@ public class FileListAdapter extends ArrayAdapter<HashMap<String, String>> {
 		ImageView imgThumb;
 		TextView lblLine1;
 		TextView lblLine2;
+		CheckBox chkMark;
+
 		// Check if an existing view is being reused, otherwise inflate the view
 		if (convertView == null) {
 			convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_filelist, parent, false);
 			imgThumb = (ImageView) convertView.findViewById(R.id.imgThumbnail);
 			lblLine1 = (TextView) convertView.findViewById(R.id.lblLine1);
 			lblLine2 = (TextView) convertView.findViewById(R.id.lblLine2);
-			convertView.setTag(new ViewHolder(imgThumb, lblLine1, lblLine2));
+			chkMark = (CheckBox) convertView.findViewById(R.id.chkMark);
+			convertView.setTag(new ViewHolder(imgThumb, lblLine1, lblLine2, chkMark));
 		} else {
 			ViewHolder viewHolder = (ViewHolder) convertView.getTag();
 			imgThumb = viewHolder.imgThumb;
 			lblLine1 = viewHolder.lblText1;
 			lblLine2 = viewHolder.lblText2;
+			chkMark = viewHolder.chkMark;
 		}
 
-		HashMap<String, String> file = getItem(position);
+		final HashMap<String, String> file = getItem(position);
 
 		// Check if file entry is a directory
 		if (file.get("attributes").contains("d")) {
+			// display folder icon
 			imgThumb.setImageDrawable(ContextCompat.getDrawable(appContext, R.drawable.folder));
+			// hide "mark for download" checkbox
+			chkMark.setVisibility(View.GONE);
 		} else {
-			// Generate the cacheFilename fom dirpath, filename and size 
+			// show "mark for download" checkbox
+			chkMark.setVisibility(View.VISIBLE);
+			
+			// Generate the cacheFilename fom dirpath, filename and size
 			String cacheFilename = appContext.getCacheDir().getAbsolutePath() + File.separator + file.get("directory").replace("/", ".") + file.get("filename")
 					+ file.get("size");
 			// If file is already cached, use it as thumbnail
@@ -80,7 +94,7 @@ public class FileListAdapter extends ArrayAdapter<HashMap<String, String>> {
 				imgThumb.setImageDrawable(Drawable.createFromPath(cacheFilename));
 			} else {
 				// If file is not cached, display an icon instead.
-				String ext = file.get("filename").substring(file.get("filename").lastIndexOf(".")+1);
+				String ext = file.get("filename").substring(file.get("filename").lastIndexOf(".") + 1);
 				if (ImageExtensions.contains(ext.toUpperCase()))
 					imgThumb.setImageDrawable(ContextCompat.getDrawable(appContext, R.drawable.image));
 				else if (MovieExtensions.contains(ext.toLowerCase()))
@@ -88,24 +102,69 @@ public class FileListAdapter extends ArrayAdapter<HashMap<String, String>> {
 				else
 					imgThumb.setImageDrawable(ContextCompat.getDrawable(appContext, R.drawable.file));
 			}
-
 		}
 
+		// Set the OnCheckedChangeListener every time to avoid the use of a recycled listener 
+		chkMark.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				if (isChecked) {
+					callback.addFileToDownloadList(file.get("directory") + "/" + file.get("filename"));
+				} else {
+					callback.removeFileFromDownloadList(file.get("directory") + "/" + file.get("filename"));
+				}
+			}
+
+		});
+
+		// Check the box if file is already marked for download
+		chkMark.setChecked(callback.isFileInDownloadList(file.get("directory") + "/" + file.get("filename")));
+		// Display filename and date/time
 		lblLine1.setText(file.get("filename"));
 		lblLine2.setText(file.get("date") + " " + file.get("time"));
 
 		return convertView;
 	}
 
+	/**
+	 * For data exchange with the FlashAirCommander.class we use an interface "EditAdapterCallback", which callback class (in this case FlashAirCommander class) will be set through this function.
+	 * 
+	 * @param callback
+	 */
+	public void setEditAdapterCallback(EditAdapterCallback callback) {
+		this.callback = callback;
+	}
+
+	/**
+	 * The callback interface which every class must implement which wishes to get called from this adapter.
+	 * 
+	 * @author axnrl
+	 *
+	 */
+	public interface EditAdapterCallback {
+		public void addFileToDownloadList(String filename);
+
+		public void removeFileFromDownloadList(String filename);
+
+		public boolean isFileInDownloadList(String filename);
+	}
+
+	/**
+	 * Holds the single items from the listview to get recycled.
+	 * 
+	 * @author axnrl
+	 */
 	private static class ViewHolder {
 		public final ImageView imgThumb;
 		public final TextView lblText1;
 		public final TextView lblText2;
+		public final CheckBox chkMark;
 
-		public ViewHolder(ImageView imgThumb, TextView lblText1, TextView lblText2) {
+		public ViewHolder(ImageView imgThumb, TextView lblText1, TextView lblText2, CheckBox chkMark) {
 			this.imgThumb = imgThumb;
 			this.lblText1 = lblText1;
 			this.lblText2 = lblText2;
+			this.chkMark = chkMark;
 		}
 	}
 }

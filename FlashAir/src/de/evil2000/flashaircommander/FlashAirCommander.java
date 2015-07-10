@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import de.evil2000.flashaircommander.FileListAdapter.EditAdapterCallback;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AlertDialog.Builder;
@@ -15,6 +17,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,12 +26,13 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 @SuppressWarnings("deprecation")
-public class FlashAirCommander extends ActionBarActivity {
+public class FlashAirCommander extends ActionBarActivity implements EditAdapterCallback {
 	public static final String APP_NAME = "FlashAirCommander";
 	private HashMap<String, String> dirUp = new HashMap<String, String>();
 	private FileListAdapter fileListAdapter;
 	private SharedPreferences sharedPrefs;
 	private ListView lstView;
+	public ArrayList<String> filesMarkedForDownload;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -46,9 +50,11 @@ public class FlashAirCommander extends ActionBarActivity {
 		lstView.setEmptyView(findViewById(R.id.prgLoading));
 
 		ArrayList<HashMap<String, String>> files = new ArrayList<HashMap<String, String>>();
+		filesMarkedForDownload = new ArrayList<String>();
 
 		fileListAdapter = new FileListAdapter(this, files);
 		fileListAdapter.setNotifyOnChange(true);
+		fileListAdapter.setEditAdapterCallback(this);
 		lstView.setAdapter(fileListAdapter);
 		lstView.setOnItemClickListener(onListItemClick());
 
@@ -145,11 +151,13 @@ public class FlashAirCommander extends ActionBarActivity {
 		if (dir.equals(""))
 			dir = "/";
 
-		HttpData httpData = new HttpData();
+		/*HttpData httpData = new HttpData();
 		httpData.retries = 5;
 		httpData.timeout = 5000;
 		NetworkTask nt = new NetworkTask(httpData, callback);
-		nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + "/command.cgi?op=100&DIR=" + dir);
+		nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + "/command.cgi?op=100&DIR=" + dir);*/
+		
+		callback.onTaskCompleted(generateFakeFileListing(dir));
 	}
 
 	/**
@@ -187,6 +195,43 @@ public class FlashAirCommander extends ActionBarActivity {
 			NetworkTask nt = new NetworkTask(httpData, callback);
 			if (!cachedFile.exists()) {
 				nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + "/thumbnail.cgi?" + path);
+			}
+		}
+	}
+	
+	private void downloadAndStoreSelectedFiles() {
+		HttpData httpData = new HttpData();
+		httpData.retries = 0;
+		int c = filesMarkedForDownload.size();
+		for (int i = 0; i < c; i++) {
+			String fqFilename = filesMarkedForDownload.get(i);
+			if (!fqFilename.startsWith("/")) {
+				fqFilename = "/" + fqFilename;
+			}
+			String storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath();
+			
+			final File storeFile = new File(storageDir + fqFilename);
+
+			OnTask callback = new OnTask() {
+				@Override
+				public void onTaskCompleted(byte[] img) {
+					try {
+						FileOutputStream fos = new FileOutputStream(storeFile);
+						fos.write(img);
+						fos.close();
+						fileListAdapter.notifyDataSetChanged();
+					} catch (FileNotFoundException e) {
+						e.printStackTrace();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+
+				}
+			};
+			
+			NetworkTask nt = new NetworkTask(httpData, callback);
+			if (!storeFile.exists()) {
+				nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + fqFilename);
 			}
 		}
 	}
@@ -286,9 +331,28 @@ public class FlashAirCommander extends ActionBarActivity {
 
 		String roh = "WLANSD_FILELIST\r\n";
 		for (int i = 0; i < numEntries; i++) {
-			roh += dir + ",filename," + String.valueOf(r.nextInt(Integer.MAX_VALUE)) + "," + String.valueOf(r.nextInt(32)) + ","
+			roh += dir + ","+(new BigInteger(130, r).toString(32))+"," + String.valueOf(r.nextInt(Integer.MAX_VALUE)) + "," + String.valueOf(r.nextInt(32)) + ","
 					+ String.valueOf(r.nextInt(Integer.MAX_VALUE)) + "," + String.valueOf(r.nextInt(Integer.MAX_VALUE)) + "\r\n";
 		}
 		return roh;
+	}
+
+	@Override
+	public void addFileToDownloadList(String filename) {
+		if (!filesMarkedForDownload.contains(filename)) {
+			filesMarkedForDownload.add(filename);
+		}
+	}
+
+	@Override
+	public boolean isFileInDownloadList(String filename) {
+		return filesMarkedForDownload.contains(filename);
+	}
+
+	@Override
+	public void removeFileFromDownloadList(String filename) {
+		if (filesMarkedForDownload.contains(filename)) {
+			filesMarkedForDownload.remove(filename);
+		}	
 	}
 }
