@@ -13,12 +13,14 @@ import de.evil2000.flashaircommander.FileListAdapter.EditAdapterCallback;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AlertDialog.Builder;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -32,6 +34,8 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 	private FileListAdapter fileListAdapter;
 	private SharedPreferences sharedPrefs;
 	private ListView lstView;
+	private ProgressDialog prgDlg;
+	private boolean downloadCanceled = false;
 	public ArrayList<String> filesMarkedForDownload;
 
 	@Override
@@ -45,7 +49,7 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 		dirUp.put("attributes", "d");
 		dirUp.put("date", "");
 		dirUp.put("time", "");
-		
+
 		lstView = (ListView) findViewById(R.id.lstView);
 		lstView.setEmptyView(findViewById(R.id.prgLoading));
 
@@ -65,7 +69,7 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 	@Override
 	protected void onStart() {
 		super.onStart();
-		updateFileListing("/");
+		updateFileListing(null);
 	}
 
 	@Override
@@ -86,8 +90,43 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 			startActivity(intent);
 			return true;
 		} else if (id == R.id.menu_download_selected_files) {
+			prgDlg = new ProgressDialog(this);
+			prgDlg.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+			prgDlg.setTitle("Downloading files");
+			prgDlg.setMessage("Please wait");
+			prgDlg.setCancelable(true);
+			prgDlg.setOnCancelListener(new DialogInterface.OnCancelListener() {
+				@Override
+				public void onCancel(DialogInterface arg0) {
+					downloadCanceled = true;
+				}
+			});
+			prgDlg.setIndeterminate(false);
+			prgDlg.setProgress(0);
+			prgDlg.setMax(filesMarkedForDownload.size());
+			prgDlg.show();
+			downloadAndStoreSelectedFiles();
+			return true;
+		} else if (id == R.id.menu_select_all) {
+			int c = fileListAdapter.getCount();
+			for (int i = 0; i < c; i++) {
+				HashMap<String, String> e = fileListAdapter.getItem(i);
+				if (e.get("filename").equals(dirUp.get("filename")))
+					continue;
+				addFileToDownloadList(e.get("directory") + "/" + e.get("filename"));
+			}
+			fileListAdapter.notifyDataSetChanged();
+			return true;
+		} else if (id == R.id.menu_deselect_all) {
+			int c = fileListAdapter.getCount();
+			for (int i = 0; i < c; i++) {
+				HashMap<String, String> e = fileListAdapter.getItem(i);
+				removeFileFromDownloadList(e.get("directory") + "/" + e.get("filename"));
+			}
+			fileListAdapter.notifyDataSetChanged();
 			return true;
 		}
+		
 		return super.onOptionsItemSelected(item);
 	}
 
@@ -124,7 +163,12 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 	 * @param dir
 	 */
 	private void updateFileListing(String dir) {
+		if (dir == null)
+			dir = "/";
+		if (dir.equals(""))
+			dir = "/";
 		final String d = dir;
+		
 		// Create callback for httpTask
 		OnTask callback = new OnTask() {
 			@Override
@@ -146,18 +190,13 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 			}
 		};
 
-		if (dir == null)
-			dir = "/";
-		if (dir.equals(""))
-			dir = "/";
-
-		/*HttpData httpData = new HttpData();
+		HttpData httpData = new HttpData();
 		httpData.retries = 5;
 		httpData.timeout = 5000;
 		NetworkTask nt = new NetworkTask(httpData, callback);
-		nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + "/command.cgi?op=100&DIR=" + dir);*/
-		
-		callback.onTaskCompleted(generateFakeFileListing(dir));
+		nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + "/command.cgi?op=100&DIR=" + dir);
+
+		// callback.onTaskCompleted(generateFakeFileListing(dir));
 	}
 
 	/**
@@ -170,6 +209,8 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 		int c = fileListAdapter.getCount();
 		for (int i = 0; i < c; i++) {
 			HashMap<String, String> entry = fileListAdapter.getItem(i);
+			if (entry.get("attributes").contains("d"))
+				continue;
 			String directory = entry.get("directory");
 			String filename = entry.get("filename");
 			String path = directory + "/" + filename;
@@ -198,41 +239,75 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 			}
 		}
 	}
-	
+
 	private void downloadAndStoreSelectedFiles() {
+		if (filesMarkedForDownload.size() == 0 || downloadCanceled) {
+			downloadCanceled = false;
+			prgDlg.dismiss();
+			fileListAdapter.notifyDataSetChanged();
+			return;
+		}
+		
 		HttpData httpData = new HttpData();
 		httpData.retries = 0;
-		int c = filesMarkedForDownload.size();
-		for (int i = 0; i < c; i++) {
-			String fqFilename = filesMarkedForDownload.get(i);
-			if (!fqFilename.startsWith("/")) {
-				fqFilename = "/" + fqFilename;
-			}
-			String storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath();
-			
-			final File storeFile = new File(storageDir + fqFilename);
 
-			OnTask callback = new OnTask() {
-				@Override
-				public void onTaskCompleted(byte[] img) {
-					try {
-						FileOutputStream fos = new FileOutputStream(storeFile);
-						fos.write(img);
-						fos.close();
-						fileListAdapter.notifyDataSetChanged();
-					} catch (FileNotFoundException e) {
-						e.printStackTrace();
-					} catch (IOException e) {
-						e.printStackTrace();
+		final String fqFilename = filesMarkedForDownload.get(0);
+		/*if (!fqFilename.startsWith("/")) {
+			fqFilename = "/" + fqFilename;
+		}*/
+
+		final String prgMessage = fqFilename;
+
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				prgDlg.setMessage(prgMessage);
+			}
+		});
+
+		String storageDir;
+		if (sharedPrefs.getBoolean("dontStoreImagesInAlbumDir", false))
+			storageDir = sharedPrefs.getString("alternativeImageStoreDirectory", getString(R.string.pref_alternative_image_store_directory_default_value));
+		else
+			storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath();
+		
+		final File storeFile = new File(storageDir + fqFilename);
+
+		OnTask callback = new OnTask() {
+			@Override
+			public void onTaskCompleted(byte[] img) {
+				try {
+					storeFile.getParentFile().mkdirs();
+					FileOutputStream fos = new FileOutputStream(storeFile);
+					fos.write(img);
+					fos.close();
+					
+					prgDlg.incrementProgressBy(1);
+					filesMarkedForDownload.remove(0);
+					
+					if (sharedPrefs.getBoolean("deleteFilesAfterDownload", true)) {
+						HttpData httpData = new HttpData();
+						httpData.retries = 0;
+						NetworkTask nt = new NetworkTask(httpData, null);
+						nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + "/upload.cgi?DEL=" + fqFilename);
 					}
-
+					
+					downloadAndStoreSelectedFiles();
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-			};
-			
-			NetworkTask nt = new NetworkTask(httpData, callback);
-			if (!storeFile.exists()) {
-				nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + fqFilename);
+
 			}
+		};
+
+		NetworkTask nt = new NetworkTask(httpData, callback);
+		if (!storeFile.exists() || sharedPrefs.getBoolean("overwriteTargetFiles", true)) {
+			nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + fqFilename);
+		} else {
+			filesMarkedForDownload.remove(0);
+			downloadAndStoreSelectedFiles();
 		}
 	}
 
@@ -297,11 +372,7 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 		Builder a = new AlertDialog.Builder(this);
 
 		/*
-		 * new DialogInterface.OnClickListener() {
-		 * public void onClick(DialogInterface dialog, int id) {
-		 * // FIRE ZE MISSILES!
-		 * }
-		 * }
+		 * new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int id) { // FIRE ZE MISSILES! } }
 		 */
 
 		a.setTitle(title);
@@ -331,8 +402,8 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 
 		String roh = "WLANSD_FILELIST\r\n";
 		for (int i = 0; i < numEntries; i++) {
-			roh += dir + ","+(new BigInteger(130, r).toString(32))+"," + String.valueOf(r.nextInt(Integer.MAX_VALUE)) + "," + String.valueOf(r.nextInt(32)) + ","
-					+ String.valueOf(r.nextInt(Integer.MAX_VALUE)) + "," + String.valueOf(r.nextInt(Integer.MAX_VALUE)) + "\r\n";
+			roh += dir + "," + (new BigInteger(130, r).toString(32)) + "," + String.valueOf(r.nextInt(Integer.MAX_VALUE)) + "," + String.valueOf(r.nextInt(32))
+					+ "," + String.valueOf(r.nextInt(Integer.MAX_VALUE)) + "," + String.valueOf(r.nextInt(Integer.MAX_VALUE)) + "\r\n";
 		}
 		return roh;
 	}
@@ -353,6 +424,6 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 	public void removeFileFromDownloadList(String filename) {
 		if (filesMarkedForDownload.contains(filename)) {
 			filesMarkedForDownload.remove(filename);
-		}	
+		}
 	}
 }

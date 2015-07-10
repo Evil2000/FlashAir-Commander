@@ -5,6 +5,8 @@
     <string name="menu_settings">Einstellungen</string>
     <string name="menu_download_selected_files">Ausgewählte Dateien herunterladen</string>
     <string name="menu_keep_selected_folders_synced">Ausgewählte Ordner synchron halten</string>
+    <string name="menu_select_all">Alle Dateien markieren</string>
+    <string name="menu_deselect_all">Keine Dateien markieren</string>
     
     <string name="pref_flashair_hostname">Hostname/IP der FlashAir Karte</string>
     <string name="pref_flashair_hostname_default_value">flashair</string>
@@ -12,6 +14,10 @@
     <string name="pref_store_imapges_in_album_dir_summary">Heruntergeladene Bilder nicht im Album (meist auf der SD Karte) speichern</string>
     <string name="pref_alternative_image_store_directory_title">Alternatives Download-Verzeichnis</string>
     <string name="pref_alternative_image_store_directory_default_value">/mnt/sdcard</string>
+    <string name="pref_delete_Files_after_download_title">Dateien auf FlashAir löschen</string>
+    <string name="pref_delete_Files_after_download_summary">Erfolgreich übertragene Dateien auf der FlashAir Karte löschen</string>
+    <string name="pref_overwrite_target_files_title">Dateien überschreiben</string>
+    <string name="pref_overwrite_target_files_summary">Bereits existierende Dateien im Zielverzeichnis überschreiben</string>
     
     <string name="dialog_title_error">Fehler</string>
     <string name="dialog_msg_error_connecting_to_flashair">Eine Verbindung zur FlashAir Karte konnte nicht hergestellt werden.</string>

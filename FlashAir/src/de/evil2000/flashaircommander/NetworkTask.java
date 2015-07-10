@@ -16,7 +16,7 @@ public class NetworkTask extends AsyncTask<String, Integer, String> {
 
 	public NetworkTask(HttpData httpData, OnTask callback) {
 		this.httpData = httpData;
-		this.callback = callback;
+		this.callback = callback != null ? callback : new OnTask();
 	}
 
 	@Override
@@ -45,8 +45,9 @@ public class NetworkTask extends AsyncTask<String, Integer, String> {
 				connection.url(httpData.url);
 			if (httpData.userAgent != null)
 				connection.userAgent(httpData.userAgent);
-			// When fetching jpegs ignore content type
+			// When fetching jpegs ignore content type and body size
 			connection.ignoreContentType(true);
+			connection.maxBodySize(0);
 
 			publishProgress(1);
 			Response response = connection.execute();
@@ -54,11 +55,12 @@ public class NetworkTask extends AsyncTask<String, Integer, String> {
 			Map<String, String> retCookies = response.cookies();
 			if (!retCookies.equals(httpData.cookies))
 				returnCookies(retCookies);
-			Log.d("Jsoup", "Response: " + response.contentType());
-			if (response.contentType().split(";")[0].equalsIgnoreCase("text/plain"))
+			Log.d("Jsoup", "Response: " + response.contentType()+" Size: "+response.header("Content-Length"));
+			if (response.contentType().split(";")[0].equalsIgnoreCase("text/plain")) {
 				return response.body();
-			else 
+			} else { 
 				returnByteArray(response.bodyAsBytes());
+			}
 			// response.headers();
 			// response.statusCode();
 			// response.statusMessage();

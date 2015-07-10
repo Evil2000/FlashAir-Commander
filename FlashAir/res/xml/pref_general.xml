@@ -44,8 +44,22 @@
         android:persistent="true" />
 	
 	<CheckBoxPreference
+        android:defaultValue="true"
+        android:key="deleteFilesAfterDownload"
+        android:summary="@string/pref_delete_Files_after_download_summary"
+        android:title="@string/pref_delete_Files_after_download_title"
+        android:persistent="true" />
+	
+	<CheckBoxPreference
+        android:defaultValue="true"
+        android:key="overwriteTargetFiles"
+        android:summary="@string/pref_overwrite_target_files_summary"
+        android:title="@string/pref_overwrite_target_files_title"
+        android:persistent="true" />
+	
+	<CheckBoxPreference
         android:defaultValue="false"
-        android:key="storeImagesInAlbumDir"
+        android:key="dontStoreImagesInAlbumDir"
         android:summary="@string/pref_store_imapges_in_album_dir_summary"
         android:title="@string/pref_store_imapges_in_album_dir_title"
         android:persistent="true" />
@@ -59,7 +73,7 @@
         android:selectAllOnFocus="true"
         android:singleLine="true"
         android:title="@string/pref_alternative_image_store_directory_title"
-        android:dependency="storeImagesInAlbumDir"
+        android:dependency="dontStoreImagesInAlbumDir"
         android:persistent="true" />
 
 </PreferenceScreen>

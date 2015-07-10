@@ -5,6 +5,8 @@
     <string name="menu_settings">Settings</string>
     <string name="menu_download_selected_files">Download selected files</string>
     <string name="menu_keep_selected_folders_synced">Keep selected folders synchronized</string>
+    <string name="menu_select_all">Select all files</string>
+    <string name="menu_deselect_all">Deselect all files</string>
     
     <!-- <string name=""></string> -->
     
@@ -28,6 +30,10 @@
     <string name="pref_store_imapges_in_album_dir_summary">Don\'t save the downloaded pictures in Android album directory (mostly on SD-Card)</string>
     <string name="pref_alternative_image_store_directory_title">Alternative download directory</string>
     <string name="pref_alternative_image_store_directory_default_value">/mnt/sdcard/FlashAir</string>
+    <string name="pref_delete_Files_after_download_title">Delete files after download</string>
+    <string name="pref_delete_Files_after_download_summary">Delete files from FlashAir device after successful download</string>
+    <string name="pref_overwrite_target_files_title">Overwrite files</string>
+    <string name="pref_overwrite_target_files_summary">Overwrite files in target download directory if they already exist</string>
     
     <string name="dialog_title_error">Error</string>
     <string name="dialog_msg_error_connecting_to_flashair">Error connecting to FlashAir device.</string>
