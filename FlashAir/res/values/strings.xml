@@ -38,6 +38,9 @@
     <string name="dialog_title_error">Error</string>
     <string name="dialog_msg_error_connecting_to_flashair">Error connecting to FlashAir device.</string>
     
+    <string name="downloading">Downloading</string>
+    <string name="please_wait">Please wait</string>
+    
     <string name="please_wait_connecting">Please wait.\nTrying to connect to FlashAir device &#8230;</string>
     <string name="error_on_main_screen">There are no items to display.\nMaybe you dont\'t have any files stored on the FlashAir device or the connection to the device could not be established. If so, check the hostname/ip in the settings screen.</string>
     

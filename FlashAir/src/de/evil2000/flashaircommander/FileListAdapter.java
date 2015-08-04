@@ -50,12 +50,27 @@ public class FileListAdapter extends ArrayAdapter<HashMap<String, String>> {
 				"vc1", "vc1test", "vcd", "video4linux2", "v4l2", "vivo", "vmd", "vob", "vobsub", "voc", "vplayer", "vqf", "w64", "wav", "wc3movie", "webm",
 				"webvtt", "wsaud", "wsvqa", "wtv", "wv", "x11grab", "xa", "xbin", "xmv", "xwma", "yop", "yuv4mpegpipe"));
 	}
+	
+	public HashMap<String, String> getFileRecord(String filename) {
+		int c = getCount();
+		
+		for (int i = 0; i < c; i++) {
+			HashMap<String, String> t = getItem(i);
+			String fqFilename = t.get("directory") + "/" +t.get("filename"); 
+			if (fqFilename.equals(filename)) {
+				return t;
+			}
+		}
+		
+		return null;
+	}
 
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		ImageView imgThumb;
 		TextView lblLine1;
 		TextView lblLine2;
+		TextView lblLine3;
 		CheckBox chkMark;
 
 		// Check if an existing view is being reused, otherwise inflate the view
@@ -64,13 +79,15 @@ public class FileListAdapter extends ArrayAdapter<HashMap<String, String>> {
 			imgThumb = (ImageView) convertView.findViewById(R.id.imgThumbnail);
 			lblLine1 = (TextView) convertView.findViewById(R.id.lblLine1);
 			lblLine2 = (TextView) convertView.findViewById(R.id.lblLine2);
+			lblLine3 = (TextView) convertView.findViewById(R.id.lblLine3);
 			chkMark = (CheckBox) convertView.findViewById(R.id.chkMark);
-			convertView.setTag(new ViewHolder(imgThumb, lblLine1, lblLine2, chkMark));
+			convertView.setTag(new ViewHolder(imgThumb, lblLine1, lblLine2, lblLine3, chkMark));
 		} else {
 			ViewHolder viewHolder = (ViewHolder) convertView.getTag();
 			imgThumb = viewHolder.imgThumb;
 			lblLine1 = viewHolder.lblText1;
 			lblLine2 = viewHolder.lblText2;
+			lblLine3 = viewHolder.lblText3;
 			chkMark = viewHolder.chkMark;
 		}
 
@@ -122,6 +139,11 @@ public class FileListAdapter extends ArrayAdapter<HashMap<String, String>> {
 		// Display filename and date/time
 		lblLine1.setText(file.get("filename"));
 		lblLine2.setText(file.get("date") + " " + file.get("time"));
+		if (file.get("attributes").contains("d")) {
+			lblLine3.setText("");
+		} else {
+			lblLine3.setText(FlashAirCommander.humanReadableByteCount(Long.valueOf(file.get("size")), false));
+		}
 
 		return convertView;
 	}
@@ -158,12 +180,14 @@ public class FileListAdapter extends ArrayAdapter<HashMap<String, String>> {
 		public final ImageView imgThumb;
 		public final TextView lblText1;
 		public final TextView lblText2;
+		public final TextView lblText3;
 		public final CheckBox chkMark;
 
-		public ViewHolder(ImageView imgThumb, TextView lblText1, TextView lblText2, CheckBox chkMark) {
+		public ViewHolder(ImageView imgThumb, TextView lblText1, TextView lblText2, TextView lblText3, CheckBox chkMark) {
 			this.imgThumb = imgThumb;
 			this.lblText1 = lblText1;
 			this.lblText2 = lblText2;
+			this.lblText3 = lblText3;
 			this.chkMark = chkMark;
 		}
 	}

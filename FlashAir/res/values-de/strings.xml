@@ -22,6 +22,9 @@
     <string name="dialog_title_error">Fehler</string>
     <string name="dialog_msg_error_connecting_to_flashair">Eine Verbindung zur FlashAir Karte konnte nicht hergestellt werden.</string>
     
+    <string name="downloading">Herunterladen</string>
+    <string name="please_wait">Bitte warten</string>
+    
     <string name="please_wait_connecting">Einen Moment bitte.\nEine Verbindung zur FlashAir Karte wird aufgebaut &#8230;</string>
     <string name="error_on_main_screen">Keine Daten zum Anzeigen vorhanden.\nEventuell haben sie keine Dateien auf der FlashAir Karte gespeichert oder die Verbindung konnte nicht hergestellt werden. Prüfen Sie ggf. den Hostname/IP in den Einstellungen.</string>
 

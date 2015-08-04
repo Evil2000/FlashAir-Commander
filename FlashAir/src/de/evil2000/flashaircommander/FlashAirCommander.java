@@ -93,8 +93,9 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 		} else if (id == R.id.menu_download_selected_files) {
 			prgDlg = new ProgressDialog(this);
 			prgDlg.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-			prgDlg.setTitle("Downloading files");
-			prgDlg.setMessage("Please wait");
+			prgDlg.setProgressNumberFormat("%1d KB/%2d KB");
+			prgDlg.setTitle(getString(R.string.downloading));
+			prgDlg.setMessage(getString(R.string.please_wait));
 			prgDlg.setCancelable(true);
 			prgDlg.setOnCancelListener(new DialogInterface.OnCancelListener() {
 				@Override
@@ -104,7 +105,7 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 			});
 			prgDlg.setIndeterminate(false);
 			prgDlg.setProgress(0);
-			prgDlg.setMax(filesMarkedForDownloadSize);
+			prgDlg.setMax(byteToKB(filesMarkedForDownloadSize));
 			prgDlg.show();
 			downloadAndStoreSelectedFiles();
 			return true;
@@ -279,13 +280,14 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 		OnTask callback = new OnTask() {
 			@Override
 			public void onProgress(Integer count) {
-				prgDlg.incrementProgressBy(count);
+				prgDlg.incrementProgressBy(byteToKB(count));
 			}
 			
 			@Override
 			public void onTaskCompleted(byte[] img) {
 				
 				filesMarkedForDownload.remove(0);
+				//removeFileFromDownloadList(fqFilename,null);
 				
 				if (sharedPrefs.getBoolean("deleteFilesAfterDownload", true)) {
 					HttpData httpData = new HttpData();
@@ -295,7 +297,6 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 				}
 				
 				downloadAndStoreSelectedFiles();
-
 			}
 		};
 
@@ -304,6 +305,7 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 			nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + fqFilename);
 		} else {
 			filesMarkedForDownload.remove(0);
+			//removeFileFromDownloadList(fqFilename,null);
 			downloadAndStoreSelectedFiles();
 		}
 	}
@@ -411,7 +413,7 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 	public void addFileToDownloadList(String filename, Long size) {
 		if (!filesMarkedForDownload.contains(filename)) {
 			filesMarkedForDownload.add(filename);
-			filesMarkedForDownloadSize += size;
+			filesMarkedForDownloadSize += size != null ? size : Long.valueOf(fileListAdapter.getFileRecord(filename).get("size"));
 		}
 	}
 
@@ -424,7 +426,21 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 	public void removeFileFromDownloadList(String filename, Long size) {
 		if (filesMarkedForDownload.contains(filename)) {
 			filesMarkedForDownload.remove(filename);
-			filesMarkedForDownloadSize += size;
+			filesMarkedForDownloadSize -= size != null ? size : Long.valueOf(fileListAdapter.getFileRecord(filename).get("size"));
 		}
+	}
+	
+	public int byteToKB(long byteTransform) {
+        long mb=1024L*1024L;
+        long kb=1024L;
+        return (int) (byteTransform/kb);
+    }
+	
+	public final static String humanReadableByteCount(long bytes, boolean si) {
+	    int unit = si ? 1000 : 1024;
+	    if (bytes < unit) return bytes + " B";
+	    int exp = (int) (Math.log(bytes) / Math.log(unit));
+	    String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
+	    return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
 	}
 }

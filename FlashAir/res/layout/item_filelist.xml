@@ -24,15 +24,22 @@
             android:id="@+id/lblLine1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Large Text"
+            android:text="DCIM"
             android:textAppearance="?android:attr/textAppearanceLarge" />
 
         <TextView
             android:id="@+id/lblLine2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Medium Text"
-            android:textAppearance="?android:attr/textAppearanceMedium" />
+            android:text="2015-06-15 19:10:36"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
+        
+        <TextView
+            android:id="@+id/lblLine3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="5,41 MB"
+            android:textAppearance="?android:attr/textAppearanceSmall" />
 
     </LinearLayout>
 
