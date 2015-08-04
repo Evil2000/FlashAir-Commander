@@ -13,6 +13,7 @@ public class HttpData {
 	public String userAgent = "Mozilla/5.0 (X11; Linux x86_64; rv:31.0) Gecko/20100101 Firefox/31.0";
 	public String referrer = "";
 	public String url = "";
+	public String writeInFile = "";
 
 	public Integer timeout = 60000; // ms
 	public Integer retries = 10;

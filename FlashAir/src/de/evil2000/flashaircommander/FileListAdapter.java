@@ -109,9 +109,9 @@ public class FileListAdapter extends ArrayAdapter<HashMap<String, String>> {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 				if (isChecked) {
-					callback.addFileToDownloadList(file.get("directory") + "/" + file.get("filename"));
+					callback.addFileToDownloadList(file.get("directory") + "/" + file.get("filename"), Long.valueOf(file.get("size")));
 				} else {
-					callback.removeFileFromDownloadList(file.get("directory") + "/" + file.get("filename"));
+					callback.removeFileFromDownloadList(file.get("directory") + "/" + file.get("filename"), Long.valueOf(file.get("size")));
 				}
 			}
 
@@ -142,9 +142,9 @@ public class FileListAdapter extends ArrayAdapter<HashMap<String, String>> {
 	 *
 	 */
 	public interface EditAdapterCallback {
-		public void addFileToDownloadList(String filename);
+		public void addFileToDownloadList(String filename, Long size);
 
-		public void removeFileFromDownloadList(String filename);
+		public void removeFileFromDownloadList(String filename, Long size);
 
 		public boolean isFileInDownloadList(String filename);
 	}

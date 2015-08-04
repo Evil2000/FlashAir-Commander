@@ -37,7 +37,8 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 	private ProgressDialog prgDlg;
 	private boolean downloadCanceled = false;
 	public ArrayList<String> filesMarkedForDownload;
-
+	public int filesMarkedForDownloadSize = 0;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -103,7 +104,7 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 			});
 			prgDlg.setIndeterminate(false);
 			prgDlg.setProgress(0);
-			prgDlg.setMax(filesMarkedForDownload.size());
+			prgDlg.setMax(filesMarkedForDownloadSize);
 			prgDlg.show();
 			downloadAndStoreSelectedFiles();
 			return true;
@@ -113,7 +114,7 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 				HashMap<String, String> e = fileListAdapter.getItem(i);
 				if (e.get("filename").equals(dirUp.get("filename")))
 					continue;
-				addFileToDownloadList(e.get("directory") + "/" + e.get("filename"));
+				addFileToDownloadList(e.get("directory") + "/" + e.get("filename"), Long.valueOf(e.get("size")));
 			}
 			fileListAdapter.notifyDataSetChanged();
 			return true;
@@ -121,7 +122,7 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 			int c = fileListAdapter.getCount();
 			for (int i = 0; i < c; i++) {
 				HashMap<String, String> e = fileListAdapter.getItem(i);
-				removeFileFromDownloadList(e.get("directory") + "/" + e.get("filename"));
+				removeFileFromDownloadList(e.get("directory") + "/" + e.get("filename"), Long.valueOf(e.get("size")));
 			}
 			fileListAdapter.notifyDataSetChanged();
 			return true;
@@ -271,33 +272,29 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 		else
 			storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath();
 		
-		final File storeFile = new File(storageDir + fqFilename);
+		File storeFile = new File(storageDir + fqFilename);
+		storeFile.getParentFile().mkdirs();
+		httpData.writeInFile = storeFile.getAbsolutePath();
 
 		OnTask callback = new OnTask() {
 			@Override
+			public void onProgress(Integer count) {
+				prgDlg.incrementProgressBy(count);
+			}
+			
+			@Override
 			public void onTaskCompleted(byte[] img) {
-				try {
-					storeFile.getParentFile().mkdirs();
-					FileOutputStream fos = new FileOutputStream(storeFile);
-					fos.write(img);
-					fos.close();
-					
-					prgDlg.incrementProgressBy(1);
-					filesMarkedForDownload.remove(0);
-					
-					if (sharedPrefs.getBoolean("deleteFilesAfterDownload", true)) {
-						HttpData httpData = new HttpData();
-						httpData.retries = 0;
-						NetworkTask nt = new NetworkTask(httpData, null);
-						nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + "/upload.cgi?DEL=" + fqFilename);
-					}
-					
-					downloadAndStoreSelectedFiles();
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
+				
+				filesMarkedForDownload.remove(0);
+				
+				if (sharedPrefs.getBoolean("deleteFilesAfterDownload", true)) {
+					HttpData httpData = new HttpData();
+					httpData.retries = 0;
+					NetworkTask nt = new NetworkTask(httpData, null);
+					nt.execute("http://" + sharedPrefs.getString("flashAirHostname", "flashair") + "/upload.cgi?DEL=" + fqFilename);
 				}
+				
+				downloadAndStoreSelectedFiles();
 
 			}
 		};
@@ -318,6 +315,8 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 	 * @return
 	 */
 	private ArrayList<HashMap<String, String>> parseFileListing(String raw) {
+		Log.d("parseFileListing", raw);
+		
 		ArrayList<HashMap<String, String>> filelist = new ArrayList<HashMap<String, String>>();
 		if (raw == null)
 			return filelist;
@@ -409,9 +408,10 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 	}
 
 	@Override
-	public void addFileToDownloadList(String filename) {
+	public void addFileToDownloadList(String filename, Long size) {
 		if (!filesMarkedForDownload.contains(filename)) {
 			filesMarkedForDownload.add(filename);
+			filesMarkedForDownloadSize += size;
 		}
 	}
 
@@ -421,9 +421,10 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 	}
 
 	@Override
-	public void removeFileFromDownloadList(String filename) {
+	public void removeFileFromDownloadList(String filename, Long size) {
 		if (filesMarkedForDownload.contains(filename)) {
 			filesMarkedForDownload.remove(filename);
+			filesMarkedForDownloadSize += size;
 		}
 	}
 }
