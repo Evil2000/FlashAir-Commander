@@ -20,6 +20,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -273,7 +274,7 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 		else
 			storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath();
 		
-		File storeFile = new File(storageDir + fqFilename);
+		final File storeFile = new File(storageDir + fqFilename);
 		storeFile.getParentFile().mkdirs();
 		httpData.writeInFile = storeFile.getAbsolutePath();
 
@@ -285,6 +286,15 @@ public class FlashAirCommander extends ActionBarActivity implements EditAdapterC
 			
 			@Override
 			public void onTaskCompleted(byte[] img) {
+				
+				if (!sharedPrefs.getBoolean("dontStoreImagesInAlbumDir", false)) {
+					try {
+						MediaStore.Images.Media.insertImage(getContentResolver(), storeFile.getAbsolutePath(), fqFilename, fqFilename);
+					} catch (FileNotFoundException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 				
 				filesMarkedForDownload.remove(0);
 				//removeFileFromDownloadList(fqFilename,null);
